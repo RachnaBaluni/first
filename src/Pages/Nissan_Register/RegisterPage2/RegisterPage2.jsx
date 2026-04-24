@@ -10,33 +10,67 @@ const RegisterPage2 = ({
   players,
 }) => {
   console.log(events);
+
   const [errors, setErrors] = useState({});
-  const [event2List, setEvent2List] = useState(events);
+  const [event2List, setEvent2List] = useState(events || []); // ✅ FIX: safe fallback
   const [isEvent2Selected, setIsEvent2Selected] = useState(false);
   const [playerEvent1List, setPlayersEvent1List] = useState([]);
   const [playerEvent2List, setPlayersEvent2List] = useState([]);
 
+  /* =========================
+     EVENT 1 SELECT
+  ========================= */
   const setEvent1 = (event1Id) => {
     setFormData({ ...formData, event1: event1Id, partner1: null });
-    setEvent2List(events.filter((event) => event._id !== event1Id));
-    setPlayersEvent1List(
-      players
-        .filter((player) => player.eventId._id === event1Id && !player.partner2)
-        .sort((a, b) => a.partner1.name.localeCompare(b.partner1.name))
-    );
+
+    // ✅ FIX: safe events usage
+    setEvent2List((events || []).filter((event) => event._id !== event1Id));
+
+    if (event1Id) {
+      setPlayersEvent1List(
+        (players || [])
+          .filter(
+            (player) =>
+              player.eventId?._id === event1Id && !player.partner2
+          )
+          .sort((a, b) =>
+            (a.partner1?.name || "").localeCompare(b.partner1?.name || "")
+          )
+      );
+    } else {
+      setPlayersEvent1List([]); // reset
+    }
+
     setErrors((prev) => ({ ...prev, event1: null }));
   };
 
+  /* =========================
+     EVENT 2 SELECT
+  ========================= */
   const setEvent2 = (event2Id) => {
     setFormData({ ...formData, event2: event2Id, partner2: null });
+
     setIsEvent2Selected(!!event2Id);
-    setPlayersEvent2List(
-      players
-        .filter((player) => player.eventId._id === event2Id && !player.partner2)
-        .sort((a, b) => a.partner1.name.localeCompare(b.partner1.name))
-    );
+
+    if (event2Id) {
+      setPlayersEvent2List(
+        (players || [])
+          .filter(
+            (player) =>
+              player.eventId?._id === event2Id && !player.partner2
+          )
+          .sort((a, b) =>
+            (a.partner1?.name || "").localeCompare(b.partner1?.name || "")
+          )
+      );
+    } else {
+      setPlayersEvent2List([]);
+    }
   };
 
+  /* =========================
+     VALIDATION
+  ========================= */
   const validateForm = () => {
     const newErrors = {};
     if (!formData.event1) newErrors.event1 = "Event 1 cannot be empty.";
@@ -44,6 +78,9 @@ const RegisterPage2 = ({
     return Object.keys(newErrors).length === 0;
   };
 
+  /* =========================
+     NEXT BUTTON
+  ========================= */
   const onNext = () => {
     if (validateForm()) handleNext();
   };
@@ -52,6 +89,7 @@ const RegisterPage2 = ({
     <div className={styles.container}>
       <h2 className={styles.heading}>Register for Events</h2>
 
+      {/* ================= EVENT 1 ================= */}
       <div className={styles.formGroup}>
         <label htmlFor="event1">Choose Event 1</label>
         <select
@@ -60,15 +98,21 @@ const RegisterPage2 = ({
           onChange={(e) => setEvent1(e.target.value || null)}
         >
           <option value="">-- Select an Event --</option>
-          {events.map((event) => (
+
+          {/* ✅ FIX: safe map */}
+          {(events || []).map((event) => (
             <option key={event._id} value={event._id}>
               {event.name}
             </option>
           ))}
         </select>
-        {errors.event1 && <div className={styles.error}>{errors.event1}</div>}
+
+        {errors.event1 && (
+          <div className={styles.error}>{errors.event1}</div>
+        )}
       </div>
 
+      {/* ================= PARTNER 1 ================= */}
       <div className={styles.formGroup}>
         <label htmlFor="partner1">Partner for Event 1</label>
         <select
@@ -82,17 +126,16 @@ const RegisterPage2 = ({
           }
         >
           <option value="">Partner Not Registered</option>
-          {playerEvent1List.map((player) => (
-            <option
-              key={player._id}
-              value={player.partner1?._id || player.partner1}
-            >
+
+          {(playerEvent1List || []).map((player) => (
+            <option key={player._id} value={player.partner1?._id}>
               {player.partner1?.name || "Unnamed Partner"}
             </option>
           ))}
         </select>
       </div>
 
+      {/* ================= EVENT 2 ================= */}
       <div className={styles.formGroup}>
         <label htmlFor="event2">Choose Event 2</label>
         <select
@@ -101,7 +144,9 @@ const RegisterPage2 = ({
           onChange={(e) => setEvent2(e.target.value || null)}
         >
           <option value="">-- Select an Event --</option>
-          {event2List.map((event) => (
+
+          {/* ✅ FIX */}
+          {(event2List || []).map((event) => (
             <option key={event._id} value={event._id}>
               {event.name}
             </option>
@@ -109,6 +154,7 @@ const RegisterPage2 = ({
         </select>
       </div>
 
+      {/* ================= PARTNER 2 ================= */}
       {isEvent2Selected && (
         <div className={styles.formGroup}>
           <label htmlFor="partner2">Partner for Event 2</label>
@@ -123,11 +169,9 @@ const RegisterPage2 = ({
             }
           >
             <option value="">Partner Not Registered</option>
-            {playerEvent2List.map((player) => (
-              <option
-                key={player._id}
-                value={player.partner1?._id || player.partner1}
-              >
+
+            {(playerEvent2List || []).map((player) => (
+              <option key={player._id} value={player.partner1?._id}>
                 {player.partner1?.name || "Unnamed Partner"}
               </option>
             ))}
@@ -135,6 +179,7 @@ const RegisterPage2 = ({
         </div>
       )}
 
+      {/* ================= BUTTONS ================= */}
       <div className={styles.buttonGroup}>
         <button onClick={handleBack} className={styles.secondaryButton}>
           Back

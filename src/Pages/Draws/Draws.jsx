@@ -3,7 +3,7 @@ import styles from "./Draws.module.css";
 import { toast } from "sonner";
 import axios from "axios";
 
-const BASE_URL = import.meta.env.VITE_APP_BACKEND_URL;
+const BASE_URL = import.meta.env.VITE_API_URL;
 
 /* =========================
    MATCH (READ ONLY)
@@ -53,7 +53,7 @@ const Round = memo(({ title, matches, roundIndex, totalRounds }) => {
 
   const [matchScores] = useState(() => {
     const scores = {};
-    matches.forEach((match) => {
+    (matches || []).forEach((match) => {
       const [s1 = "", s2 = ""] = match.Score
         ? match.Score.split(" + ")
         : ["", ""];
@@ -66,14 +66,15 @@ const Round = memo(({ title, matches, roundIndex, totalRounds }) => {
     <div className={styles.roundContainer}>
       <h2 className={styles.roundTitle}>{title}</h2>
 
-      <div className={styles.matchesContainer} >
-        {matches.map((match, idx) => (
+      <div className={styles.matchesContainer}>
+        {(matches || []).map((match, idx) => (
           <React.Fragment key={match._id || idx}>
-            <div className={styles.matchPair}
-            style={{
-    marginTop: `${roundIndex * 90}px`,
-  }}>
-              {/* Header */}
+            <div
+              className={styles.matchPair}
+              style={{
+                marginTop: `${roundIndex * 90}px`,
+              }}
+            >
               <div className={styles.matchHeader}>
                 <span className={styles.matchNumber}>
                   Match {match.Match_number}
@@ -81,7 +82,6 @@ const Round = memo(({ title, matches, roundIndex, totalRounds }) => {
                 <span className={styles.matchStatus}>{match.Status}</span>
               </div>
 
-              {/* Meta */}
               <div className={styles.matchMeta}>
                 {match.MatchTime && (
                   <span className={styles.matchChip}>
@@ -123,7 +123,7 @@ const Round = memo(({ title, matches, roundIndex, totalRounds }) => {
 });
 
 /* =========================
-   MANAGE RESULT (VIEW ONLY)
+   MANAGE RESULT
    ========================= */
 const ManageResult = () => {
   const [events, setEvents] = useState([]);
@@ -139,8 +139,9 @@ const ManageResult = () => {
       const res = await axios.get(
         `${BASE_URL}/api/nissan-draws/${selectedEvent}`
       );
+
       if (res.data.success) {
-        setDraws(res.data.data);
+        setDraws(res.data?.data || []);
       }
     } catch {
       toast.error("Error fetching results");
@@ -153,14 +154,17 @@ const ManageResult = () => {
     const fetchEvents = async () => {
       try {
         const res = await axios.get(`${BASE_URL}/api/events`);
-        setEvents(res.data.data);
-        if (res.data.data.length) {
-          setSelectedEvent(res.data.data[0]._id);
+        const data = res.data?.data || [];
+
+        setEvents(data);
+        if (data.length) {
+          setSelectedEvent(data[0]._id);
         }
       } catch {
         toast.error("Error fetching events");
       }
     };
+
     fetchEvents();
   }, []);
 
@@ -168,7 +172,7 @@ const ManageResult = () => {
     fetchDraws();
   }, [fetchDraws]);
 
-  const buildRounds = (draws) => {
+  const buildRounds = (draws = []) => {
     if (!draws.length) return [];
 
     const grouped = draws.reduce((acc, d) => {
@@ -181,20 +185,20 @@ const ManageResult = () => {
       .sort(([a], [b]) => parseInt(a.split(" ")[1]) - parseInt(b.split(" ")[1]))
       .map(([stage, matches]) => ({
         title: stage,
-        matches: matches.sort(
+        matches: (matches || []).sort(
           (a, b) => a.Match_number - b.Match_number
         ),
       }));
   };
 
-  const rounds = buildRounds(draws);
+  const rounds = buildRounds(draws || []);
 
   return (
     <div className={styles.manageResultContainer}>
       <h1 className={styles.title}>View Draws</h1>
 
       <div className={styles.eventFilterButtons}>
-        {events.map((event) => (
+        {(events || []).map((event) => (
           <button
             key={event._id}
             className={`${styles.filterButton} ${
@@ -213,7 +217,7 @@ const ManageResult = () => {
         <p>No results available for this event.</p>
       ) : (
         <div className={styles.bracketContainer}>
-          {rounds.map((round, idx) => (
+          {(rounds || []).map((round, idx) => (
             <Round
               key={round.title}
               title={round.title}

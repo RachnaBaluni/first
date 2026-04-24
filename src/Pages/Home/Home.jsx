@@ -25,9 +25,9 @@ const Home = () => {
     const fetchEvents = async () => {
       try {
         const response = await axios.get(
-          `${import.meta.env.VITE_APP_BACKEND_URL}/api/main-events`
+          `${import.meta.env.VITE_API_URL}/api/main-events`
         );
-        setEvents(response.data.data.slice(0, 3)); // Get first 3 events
+       setEvents((response.data?.data || response.data || []).slice(0, 3)); // Get first 3 events
       } catch (error) {
         console.error("Error fetching events:", error);
       }

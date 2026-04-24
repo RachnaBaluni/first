@@ -294,7 +294,56 @@ const LoginPage2 = ({
           <option value="">-- Select an Event --</option>
           {events.map((event) => (
             <option key={event._id} value={event._id}>
-              {event.name}
+              {event.name}const setEvent1 = (event1Id) => {
+  setFormData((prev) => ({ ...prev, event1: event1Id, partner1: "" }));
+
+  setEvent2List(events.filter((event) => event._id !== event1Id));
+
+  if (event1Id) {
+    const currentTeamForEvent1 = playerTeam.find(
+      (team) =>
+        team.eventId._id === event1Id &&
+        (team.partner1?._id === player._id ||
+          team.partner2?._id === player._id)
+    );
+
+    let existingPartner = null;
+
+    if (currentTeamForEvent1) {
+      existingPartner =
+        currentTeamForEvent1.partner1?._id === player._id
+          ? currentTeamForEvent1.partner2
+          : currentTeamForEvent1.partner1;
+    }
+
+    let availablePartners = players
+      .filter((team) => team.eventId._id === event1Id && !team.partner2)
+      .map((team) => team.partner1)
+      .filter((p) => p && p._id !== player._id);
+
+    if (
+      existingPartner &&
+      !availablePartners.some((p) => p._id === existingPartner._id)
+    ) {
+      availablePartners.push(existingPartner);
+    }
+
+    const uniquePlayers = [
+      ...new Map(
+        availablePartners
+          .filter((p) => p && p._id)
+          .map((item) => [item["_id"], item])
+      ).values(),
+    ];
+
+    setPlayersEvent1List(sortPlayersByName(uniquePlayers));
+  } else {
+    // ✅ FIX: clear list when no event selected
+    setPlayersEvent1List([]);
+  }
+
+  setErrors((prev) => ({ ...prev, event1: null }));
+};
             </option>
           ))}
         </select>
